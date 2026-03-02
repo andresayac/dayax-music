@@ -103,6 +103,126 @@
       </div>
     </section>
 
+    <!-- ═══════════ EXPLORE: Moods & Genres ═══════════ -->
+    <section v-if="exploreMoods.length" class="section">
+      <h2 class="section-title">Moods y géneros</h2>
+      <div class="mood-grid">
+        <button
+          v-for="mood in exploreMoods.slice(0, 24)"
+          :key="mood.text"
+          class="mood-card"
+          :style="{ '--mood-color': mood.color || getRandomColor(mood.text) }"
+          @click="goToGenre(mood)"
+        >
+          <span class="mood-text">{{ mood.text }}</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════ EXPLORE: New Releases ═══════════ -->
+    <section v-for="es in exploreContent" :key="es.title" class="section">
+      <div class="section-header">
+        <h2 class="section-title">{{ es.title }}</h2>
+        <span v-if="es.strapline" class="section-strapline">{{ es.strapline }}</span>
+      </div>
+
+      <!-- Albums carousel -->
+      <div v-if="es.albums.length" class="carousel-wrap" :ref="(el) => setCarouselRef(`ex-${es.title}`, el)">
+        <button class="carousel-arrow left" @click="scrollCarousel(`ex-${es.title}`, -1)"><i class="pi pi-chevron-left" /></button>
+        <div class="carousel-track">
+          <div v-for="album in es.albums" :key="album.id" class="carousel-card" @click="$router.push(`/album/${album.id}`)">
+            <div class="card-img-wrap">
+              <img :src="album.cover_medium || album.cover" :alt="album.title" loading="lazy" class="card-img" />
+              <div class="card-play-overlay"><i class="pi pi-play-circle" /></div>
+            </div>
+            <p class="card-title">{{ album.title }}</p>
+            <p class="card-sub">{{ album.artist?.name || '' }}</p>
+          </div>
+        </div>
+        <button class="carousel-arrow right" @click="scrollCarousel(`ex-${es.title}`, 1)"><i class="pi pi-chevron-right" /></button>
+      </div>
+
+      <!-- Tracks grid -->
+      <div v-if="es.tracks.length" class="quick-picks-grid">
+        <div v-for="track in es.tracks.slice(0, 12)" :key="track.videoId" class="quick-pick-item" @click="playExploreTrack(track, es.tracks)">
+          <img :src="track.album.cover_small || track.album.cover" :alt="track.title" loading="lazy" class="qp-img" />
+          <div class="qp-info">
+            <span class="qp-title">{{ track.title }}</span>
+            <span class="qp-meta">{{ track.artist.name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Playlists carousel -->
+      <div v-if="es.playlists.length" class="carousel-wrap" :ref="(el) => setCarouselRef(`ex-pl-${es.title}`, el)">
+        <button class="carousel-arrow left" @click="scrollCarousel(`ex-pl-${es.title}`, -1)"><i class="pi pi-chevron-left" /></button>
+        <div class="carousel-track">
+          <div v-for="pl in es.playlists" :key="pl.id" class="carousel-card" @click="openPlaylist(pl)">
+            <div class="card-img-wrap">
+              <img :src="pl.cover_medium || pl.cover" :alt="pl.title" loading="lazy" class="card-img" />
+              <div class="card-play-overlay"><i class="pi pi-play-circle" /></div>
+            </div>
+            <p class="card-title">{{ pl.title }}</p>
+            <p class="card-sub">{{ pl.description }}</p>
+          </div>
+        </div>
+        <button class="carousel-arrow right" @click="scrollCarousel(`ex-pl-${es.title}`, 1)"><i class="pi pi-chevron-right" /></button>
+      </div>
+    </section>
+
+    <!-- ═══════════ EXPLORE: Charts ═══════════ -->
+    <section v-if="chartSections.length" class="section">
+      <div class="section-header">
+        <h2 class="section-title">Charts</h2>
+        <div class="country-chips" v-if="countries.length">
+          <button
+            v-for="c in countries.slice(0, 12)"
+            :key="c.text"
+            class="country-chip"
+            :class="{ active: c.selected }"
+            @click="loadCharts(c.params)"
+          >{{ c.text }}</button>
+        </div>
+      </div>
+
+      <div v-for="cs in chartSections" :key="cs.title" class="chart-section">
+        <h3 class="subsection-title">{{ cs.title }}</h3>
+
+        <!-- Chart tracks -->
+        <div v-if="cs.tracks.length" class="chart-tracks">
+          <div
+            v-for="(track, idx) in cs.tracks.slice(0, 10)"
+            :key="track.videoId"
+            class="chart-track"
+            @click="playExploreTrack(track, cs.tracks)"
+          >
+            <span class="chart-rank">{{ idx + 1 }}</span>
+            <img :src="track.album.cover_small || track.album.cover" :alt="track.title" loading="lazy" class="chart-img" />
+            <div class="chart-info">
+              <span class="chart-title">{{ track.title }}</span>
+              <span class="chart-artist">{{ track.artist.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart playlists -->
+        <div v-if="cs.playlists.length" class="carousel-wrap" :ref="(el) => setCarouselRef(`chart-${cs.title}`, el)">
+          <button class="carousel-arrow left" @click="scrollCarousel(`chart-${cs.title}`, -1)"><i class="pi pi-chevron-left" /></button>
+          <div class="carousel-track">
+            <div v-for="pl in cs.playlists" :key="pl.id" class="carousel-card" @click="openPlaylist(pl)">
+              <div class="card-img-wrap">
+                <img :src="pl.cover_medium || pl.cover" :alt="pl.title" loading="lazy" class="card-img" />
+                <div class="card-play-overlay"><i class="pi pi-play-circle" /></div>
+              </div>
+              <p class="card-title">{{ pl.title }}</p>
+              <p class="card-sub">{{ pl.description }}</p>
+            </div>
+          </div>
+          <button class="carousel-arrow right" @click="scrollCarousel(`chart-${cs.title}`, 1)"><i class="pi pi-chevron-right" /></button>
+        </div>
+      </div>
+    </section>
+
     <!-- Loading skeleton -->
     <div v-if="isLoading" class="loading-sections">
       <div class="skeleton-chips">
@@ -128,7 +248,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { youtubeApi, type DayaxTrack, type DayaxHomeSection } from '@/api/youtube'
+import { youtubeApi, type DayaxTrack, type DayaxHomeSection, type DayaxExploreSection, type DayaxChartSection } from '@/api/youtube'
 import { usePlayerStore } from '@/stores/player'
 import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
@@ -148,6 +268,11 @@ const quickPickTracks = ref<DayaxTrack[]>([])
 const isLoading = ref(true)
 const hasError = ref(false)
 
+// Explore state
+const exploreSections = ref<DayaxExploreSection[]>([])
+const chartSections = ref<DayaxChartSection[]>([])
+const countries = ref<{ text: string; params: string; selected: boolean }[]>([])
+
 const greeting = computed(() => {
   const h = new Date().getHours()
   if (h < 12) return 'Buenos días'
@@ -162,25 +287,50 @@ const displaySections = computed(() => {
   )
 })
 
+// Explore: extract moods from explore sections
+const exploreMoods = computed(() => {
+  for (const s of exploreSections.value) {
+    if (s.moodButtons?.length) return s.moodButtons
+  }
+  return []
+})
+
+// Explore: content sections (without mood buttons)
+const exploreContent = computed(() =>
+  exploreSections.value.filter(s => !s.moodButtons?.length)
+)
+
 async function loadAll() {
   isLoading.value = true
   hasError.value = false
   try {
-    const homeRes = await youtubeApi.getHomeFeed()
+    // Load home feed + explore + charts in parallel
+    const [homeRes, exploreRes, chartsRes] = await Promise.all([
+      youtubeApi.getHomeFeed(),
+      youtubeApi.getExplore().catch(() => null),
+      youtubeApi.getChartsBrowse().catch(() => null),
+    ])
 
-    // Extract mood chips
+    // Home feed
     moodChips.value = (homeRes.data.chips || []).slice(0, 10)
-
     const sections = homeRes.data.sections || []
-
-    // First section with tracks becomes "Quick picks"
     const firstTrackSection = sections.find((s: DayaxHomeSection) => s.tracks.length > 0)
     if (firstTrackSection) {
       quickPickTracks.value = firstTrackSection.tracks
-      // Remove from regular sections
       allSections.value = sections.filter((s: DayaxHomeSection) => s !== firstTrackSection)
     } else {
       allSections.value = sections
+    }
+
+    // Explore data
+    if (exploreRes) {
+      exploreSections.value = exploreRes.data.sections || []
+    }
+
+    // Charts data
+    if (chartsRes) {
+      chartSections.value = chartsRes.data.sections || []
+      countries.value = chartsRes.data.countries || []
     }
   } catch (err) {
     console.error('Failed to load discover:', err)
@@ -192,7 +342,6 @@ async function loadAll() {
 
 async function toggleChip(chip: MoodChip) {
   if (activeChip.value === chip.text) {
-    // Deselect — reload default feed
     activeChip.value = ''
     await loadAll()
     return
@@ -204,12 +353,10 @@ async function toggleChip(chip: MoodChip) {
     const homeRes = await youtubeApi.getHomeFeed(chip.params)
     const sections = homeRes.data.sections || []
 
-    // Update chips if returned
     if (homeRes.data.chips?.length) {
       moodChips.value = homeRes.data.chips.slice(0, 10)
     }
 
-    // Filtered view: first track section as quick picks, rest as sections
     const firstTrackSection = sections.find((s: DayaxHomeSection) => s.tracks.length > 0)
     if (firstTrackSection) {
       quickPickTracks.value = firstTrackSection.tracks
@@ -225,13 +372,43 @@ async function toggleChip(chip: MoodChip) {
   }
 }
 
+async function loadCharts(params: string) {
+  try {
+    const res = await youtubeApi.getChartsBrowse(params)
+    chartSections.value = res.data.sections || []
+    countries.value = res.data.countries || []
+  } catch (err) {
+    console.error('Failed to load charts:', err)
+  }
+}
+
 function playTrack(track: DayaxTrack) {
   player.playTrack(track, quickPickTracks.value)
+}
+
+function playExploreTrack(track: DayaxTrack, list: DayaxTrack[]) {
+  player.playTrack(track, list)
 }
 
 function openPlaylist(pl: { id: string }) {
   const id = pl.id.startsWith('VL') ? pl.id : `VL${pl.id}`
   router.push(`/playlist/${id}`)
+}
+
+function goToGenre(mood: { params: string }) {
+  router.push(`/genre/${encodeURIComponent(mood.params)}`)
+}
+
+// Generate consistent colors for moods
+function getRandomColor(text: string): string {
+  const colors = [
+    '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3',
+    '#00bcd4', '#009688', '#4caf50', '#ff9800', '#ff5722',
+    '#795548', '#607d8b', '#f44336', '#1db954', '#e040fb',
+  ]
+  let hash = 0
+  for (let i = 0; i < text.length; i++) hash = text.charCodeAt(i) + ((hash << 5) - hash)
+  return colors[Math.abs(hash) % colors.length] ?? '#673ab7'
 }
 
 // ─── Carousel scroll ───
@@ -329,8 +506,8 @@ onMounted(() => loadAll())
 }
 
 .qp-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.qp-title { font-size: 0.82rem; font-weight: 600; color: var(--p-text-color); }
-.qp-meta { font-size: 0.7rem; color: var(--p-text-muted-color); }
+.qp-title { font-size: 0.82rem; font-weight: 600; color: var(--p-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qp-meta { font-size: 0.7rem; color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ─── Sections ─── */
 .section { margin-bottom: 20px; }
@@ -349,13 +526,17 @@ onMounted(() => loadAll())
   font-weight: 700;
   letter-spacing: -0.02em;
 }
+.subsection-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  margin-bottom: 10px;
+}
 
 .tracks-list { display: flex; flex-direction: column; }
 
 /* ─── Carousel ─── */
-.carousel-wrap {
-  position: relative;
-}
+.carousel-wrap { position: relative; }
 
 .carousel-track {
   display: flex;
@@ -392,6 +573,55 @@ onMounted(() => loadAll())
 .carousel-arrow:hover { background: var(--p-surface-700); }
 .carousel-arrow.left { left: -8px; }
 .carousel-arrow.right { right: -8px; }
+
+/* ─── Carousel Cards (explore) ─── */
+.carousel-card {
+  flex: 0 0 180px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.carousel-card:hover { transform: translateY(-3px); }
+.card-img-wrap {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 180px;
+  height: 180px;
+  background: var(--p-surface-800);
+}
+.card-img { width: 100%; height: 100%; object-fit: cover; }
+.card-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-size: 2rem;
+  color: white;
+}
+.carousel-card:hover .card-play-overlay { opacity: 1; }
+.card-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  margin-top: 6px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-sub {
+  font-size: 0.72rem;
+  color: var(--p-text-muted-color);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ─── Playlist Cards ─── */
 .playlist-card {
@@ -463,6 +693,124 @@ onMounted(() => loadAll())
   overflow: hidden;
 }
 
+/* ─── Mood Grid (Explore) ─── */
+.mood-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.mood-card {
+  position: relative;
+  padding: 18px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--mood-color, #673ab7);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  min-height: 80px;
+  display: flex;
+  align-items: flex-end;
+}
+.mood-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 30%, rgba(0,0,0,0.3));
+  border-radius: inherit;
+}
+.mood-card:hover { transform: scale(1.03); filter: brightness(1.1); }
+.mood-card:active { transform: scale(0.97); }
+.mood-text {
+  position: relative;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  z-index: 1;
+}
+
+/* ─── Chart Tracks (Explore) ─── */
+.chart-section { margin-bottom: 18px; }
+.chart-tracks {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+.chart-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  overflow: hidden;
+}
+.chart-track:hover { background: rgba(255,255,255,0.06); }
+.chart-rank {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--p-text-muted-color);
+  min-width: 28px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.chart-img {
+  width: 48px; height: 48px;
+  object-fit: cover; border-radius: 4px;
+  flex-shrink: 0; background: var(--p-surface-800);
+}
+.chart-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+.chart-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chart-artist {
+  font-size: 0.7rem;
+  color: var(--p-text-muted-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Country Chips ─── */
+.country-chips {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.country-chips::-webkit-scrollbar { display: none; }
+
+.country-chip {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 500px;
+  border: none;
+  background: rgba(255,255,255,0.08);
+  color: var(--p-text-color);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+.country-chip:hover { background: rgba(255,255,255,0.14); }
+.country-chip.active { background: var(--p-text-color); color: var(--p-surface-950); font-weight: 600; }
+
 /* ─── Loading Skeleton ─── */
 .skeleton-chips { display: flex; gap: 8px; margin-bottom: 28px; }
 .skeleton-section { margin-bottom: 32px; }
@@ -489,10 +837,22 @@ onMounted(() => loadAll())
   .playlist-card { width: 150px; }
   .playlist-img-wrap { width: 150px; height: 150px; }
   .page-title { font-size: 1.5rem; }
+  .mood-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .mood-card { min-height: 60px; padding: 12px 10px; }
+  .carousel-card { flex: 0 0 140px; }
+  .card-img-wrap { width: 140px; height: 140px; }
+  .card-title, .card-sub { max-width: 140px; }
+  .chart-tracks { grid-template-columns: 1fr; }
+  .carousel-arrow { display: none; }
 }
 
 @media (min-width: 601px) and (max-width: 900px) {
   .quick-picks-grid { grid-template-columns: repeat(2, 1fr); }
+  .mood-grid { grid-template-columns: repeat(3, 1fr); }
+  .carousel-card { flex: 0 0 160px; }
+  .card-img-wrap { width: 160px; height: 160px; }
+  .card-title, .card-sub { max-width: 160px; }
+  .chart-tracks { grid-template-columns: 1fr; }
 }
 
 @media (min-width: 901px) and (max-width: 1200px) {

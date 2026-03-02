@@ -41,9 +41,7 @@ const router = createRouter({
     },
     {
       path: '/explore',
-      name: 'explore',
-      meta: { title: 'Explorar' },
-      component: () => import('@/views/ExploreView.vue'),
+      redirect: '/',
     },
     {
       path: '/genre/:params',

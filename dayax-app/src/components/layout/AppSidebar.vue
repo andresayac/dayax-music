@@ -68,7 +68,6 @@ const settings = useSettingsStore()
 
 const mainNav = [
   { path: '/', label: 'Inicio', icon: 'pi pi-home' },
-  { path: '/explore', label: 'Explorar', icon: 'pi pi-compass' },
   { path: '/search', label: 'Buscar', icon: 'pi pi-search' },
 ]
 

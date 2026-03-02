@@ -21,7 +21,6 @@ const route = useRoute()
 const navItems = [
   { path: '/', label: 'Inicio', icon: 'pi pi-home' },
   { path: '/search', label: 'Buscar', icon: 'pi pi-search' },
-  { path: '/queue', label: 'Cola', icon: 'pi pi-list' },
   { path: '/favorites', label: 'Me Gusta', icon: 'pi pi-heart' },
 ]
 
