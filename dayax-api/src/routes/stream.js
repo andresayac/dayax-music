@@ -3,40 +3,93 @@ import { getInnertube } from '../innertube.js';
 
 const router = Router();
 
+// ─── Shared: resolve best audio format with client fallback ───
+async function resolveAudioFormat(videoId) {
+    const yt = await getInnertube();
+
+    // Try multiple clients — IOS/ANDROID still return traditional URLs,
+    // WEB now uses SABR but may work as last resort.
+    const clients = ['IOS', 'ANDROID', 'WEB'];
+    let info, allFormats = [];
+
+    for (const client of clients) {
+        console.log(`[stream] Trying client "${client}" for ${videoId}`);
+        try {
+            info = await yt.getBasicInfo(videoId, { client });
+        } catch (err) {
+            console.error(`[stream] Client "${client}" threw:`, err.message);
+            continue;
+        }
+
+        // Log playability status — this is the key diagnostic
+        const ps = info.playability_status;
+        console.log(`[stream] playability_status: status=${ps?.status}, reason="${ps?.reason || 'none'}"`);
+
+        if (ps?.status === 'LOGIN_REQUIRED') {
+            console.warn(`[stream] YouTube requires login for "${client}" — video may be age-restricted`);
+            continue;
+        }
+        if (ps?.status === 'UNPLAYABLE') {
+            console.warn(`[stream] Video unplayable with "${client}": ${ps?.reason}`);
+            continue;
+        }
+
+        const sd = info.streaming_data;
+        console.log(`[stream] streaming_data: ${sd ? 'present' : 'null/undefined'}`);
+
+        if (!sd) {
+            console.warn(`[stream] No streaming_data with "${client}" — YouTube may be blocking this IP/client`);
+            continue;
+        }
+
+        const rawAdaptive = sd.adaptive_formats || [];
+        const rawFormats = sd.formats || [];
+        console.log(`[stream] Raw formats: adaptive=${rawAdaptive.length}, combined=${rawFormats.length}`);
+
+        // Log first few formats for debugging
+        [...rawAdaptive, ...rawFormats].slice(0, 3).forEach((f, i) => {
+            console.log(`[stream]   format[${i}]: mime=${f.mime_type}, has_audio=${f.has_audio}, has_video=${f.has_video}, url=${f.url ? 'yes' : 'no'}, cipher=${f.signature_cipher ? 'yes' : 'no'}`);
+        });
+
+        allFormats = [
+            ...rawAdaptive,
+            ...rawFormats,
+        ].filter(f => (f.url || f.signature_cipher) && f.has_audio);
+
+        console.log(`[stream] Formats after filter (has_audio + url/cipher): ${allFormats.length}`);
+
+        if (allFormats.length > 0) break;
+    }
+
+    // Prefer audio-only, sorted by bitrate (highest first)
+    const audioOnly = allFormats
+        .filter(f => !f.has_video)
+        .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+
+    const best = audioOnly.length > 0
+        ? audioOnly[0]
+        : allFormats.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+
+    if (!best) throw new Error('No audio formats found — YouTube may be blocking this server IP. Consider using a PoToken.');
+
+    console.log(`[stream] Selected: mime=${best.mime_type}, bitrate=${best.bitrate}, audio_only=${!best.has_video}`);
+
+    return { yt, info, best };
+}
+
 // GET /api/stream/download/:videoId — download audio file directly
 router.get('/download/:videoId', async (req, res) => {
     try {
         const { videoId } = req.params;
-        const yt = await getInnertube();
-
-        // Use IOS client (WEB uses SABR and doesn't return traditional URLs)
-        const info = await yt.getBasicInfo(videoId, 'IOS');
-
-        const allFormats = [
-            ...(info.streaming_data?.adaptive_formats || []),
-            ...(info.streaming_data?.formats || []),
-        ].filter(f => (f.url || f.signature_cipher) && f.has_audio);
-
-        // Prefer audio-only, sorted by bitrate (highest first)
-        const audioOnly = allFormats
-            .filter(f => !f.has_video)
-            .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-
-        const bestFormat = audioOnly.length > 0
-            ? audioOnly[0]
-            : allFormats.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
-
-        if (!bestFormat) {
-            return res.status(404).json({ error: 'No downloadable audio formats found' });
-        }
+        const { yt, info, best } = await resolveAudioFormat(videoId);
 
         // Decipher URL
-        const url = await bestFormat.decipher(yt.session.player);
+        const url = await best.decipher(yt.session.player);
 
         // Determine file extension from mime type
         let ext = 'mp4';
-        if (bestFormat.mime_type?.includes('webm')) ext = 'webm';
-        else if (bestFormat.mime_type?.includes('mp4')) ext = 'm4a';
+        if (best.mime_type?.includes('webm')) ext = 'webm';
+        else if (best.mime_type?.includes('mp4')) ext = 'm4a';
 
         // Build filename from video title
         const title = (info.basic_info?.title || videoId).replace(/[<>:"/\\|?*]/g, '_');
@@ -49,8 +102,8 @@ router.get('/download/:videoId', async (req, res) => {
         }
 
         // Set download headers
-        const contentLength = bestFormat.content_length || upstream.headers.get('content-length');
-        const mimeType = bestFormat.mime_type || upstream.headers.get('content-type') || 'audio/mp4';
+        const contentLength = best.content_length || upstream.headers.get('content-length');
+        const mimeType = best.mime_type || upstream.headers.get('content-type') || 'audio/mp4';
 
         res.set('Content-Type', mimeType);
         res.set('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
@@ -84,58 +137,7 @@ async function getAudioUrl(videoId) {
     const cached = urlCache.get(videoId);
     if (cached && cached.expires > Date.now()) return cached;
 
-    const yt = await getInnertube();
-
-    // Try IOS first, fall back to ANDROID if no formats
-    const clients = ['IOS', 'ANDROID', 'WEB'];
-    let info, allFormats = [];
-
-    for (const client of clients) {
-        console.log(`[stream] Trying client "${client}" for ${videoId}`);
-        try {
-            info = await yt.getBasicInfo(videoId, client);
-        } catch (err) {
-            console.error(`[stream] Client "${client}" failed:`, err.message);
-            continue;
-        }
-
-        const sd = info.streaming_data;
-        console.log(`[stream] streaming_data: ${sd ? 'present' : 'null/undefined'}`);
-
-        if (!sd) continue;
-
-        const rawAdaptive = sd.adaptive_formats || [];
-        const rawFormats = sd.formats || [];
-        console.log(`[stream] Raw formats: adaptive=${rawAdaptive.length}, combined=${rawFormats.length}`);
-
-        // Log first few formats for debugging
-        [...rawAdaptive, ...rawFormats].slice(0, 3).forEach((f, i) => {
-            console.log(`[stream]   format[${i}]: mime=${f.mime_type}, has_audio=${f.has_audio}, has_video=${f.has_video}, url=${f.url ? 'yes' : 'no'}, cipher=${f.signature_cipher ? 'yes' : 'no'}`);
-        });
-
-        allFormats = [
-            ...rawAdaptive,
-            ...rawFormats,
-        ].filter(f => (f.url || f.signature_cipher) && f.has_audio);
-
-        console.log(`[stream] Formats after filter (has_audio + url/cipher): ${allFormats.length}`);
-
-        if (allFormats.length > 0) break;
-    }
-
-    // Prefer audio-only, sorted by bitrate (highest first)
-    const audioOnly = allFormats
-        .filter(f => !f.has_video)
-        .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-
-    const best = audioOnly.length > 0
-        ? audioOnly[0]
-        : allFormats.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
-
-    if (!best) throw new Error('No audio formats found');
-
-    console.log(`[stream] Selected: mime=${best.mime_type}, bitrate=${best.bitrate}, audio_only=${!best.has_video}`);
-
+    const { yt, info, best } = await resolveAudioFormat(videoId);
     const url = await best.decipher(yt.session.player);
 
     // Normalize mime type to audio/* for browser compatibility
@@ -228,4 +230,3 @@ function pipeResponse(req, res, upstream, audio) {
 }
 
 export default router;
-
