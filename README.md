@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="dayax-app/public/vite.svg" width="80" alt="Dayax Logo">
+  <img src="dayax-app/public/favicon.ico" width="80" alt="Dayax Logo">
 </p>
 
 <h1 align="center">Dayax</h1>
