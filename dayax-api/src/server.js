@@ -8,9 +8,14 @@ import streamRoutes from './routes/stream.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// CORS — allowed origins from env (comma-separated) or defaults for local dev
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : ['http://localhost:3333', 'http://127.0.0.1:3333'];
+
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3333', 'http://127.0.0.1:3333'],
+    origin: allowedOrigins,
 }));
 app.use(express.json());
 

@@ -94,12 +94,27 @@ dayax/
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/tu-usuario/dayax.git
-cd dayax
+git clone https://github.com/andresayac/dayax-music.git
+cd dayax-music
 
 # Instalar todas las dependencias
 pnpm install
 ```
+
+## Configuración de Entorno
+
+Cada paquete tiene un archivo `.env.example` con las variables disponibles. Copia y ajusta según tu entorno:
+
+```bash
+# API (dayax-api/.env)
+PORT=3001
+ALLOWED_ORIGINS=https://tu-dominio.com    # orígenes CORS permitidos (separados por coma)
+
+# Frontend (dayax-app/.env)
+VITE_API_BASE=                             # vacío en dev (usa proxy), URL completa en producción
+```
+
+> En desarrollo no necesitas crear `.env` — los valores por defecto funcionan automáticamente.
 
 ## Desarrollo
 
