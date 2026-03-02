@@ -1,0 +1,15 @@
+{
+    "name": "dayax",
+    "version": "2.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "pnpm -r --parallel run dev",
+        "dev:api": "pnpm --filter @dayax/api dev",
+        "dev:app": "pnpm --filter @dayax/app dev",
+        "build": "pnpm --filter @dayax/app build"
+    },
+    "engines": {
+        "node": "^20.19.0 || >=22.12.0"
+    }
+}

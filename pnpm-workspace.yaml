@@ -1,0 +1,7 @@
+packages:
+  - dayax-api
+  - dayax-app
+
+onlyBuiltDependencies:
+  - esbuild
+  - youtubei.js
