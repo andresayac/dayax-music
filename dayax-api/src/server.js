@@ -1,0 +1,68 @@
+import express from 'express';
+import cors from 'cors';
+import { getInnertube } from './innertube.js';
+import searchRoutes from './routes/search.js';
+import browseRoutes from './routes/browse.js';
+import streamRoutes from './routes/stream.js';
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Middleware
+app.use(cors({
+    origin: ['http://localhost:3333', 'http://127.0.0.1:3333'],
+}));
+app.use(express.json());
+
+// Routes
+app.use('/api/search', searchRoutes);
+app.use('/api', browseRoutes);
+app.use('/api/stream', streamRoutes);
+
+// Image proxy — fetches YouTube/Google CDN images server-side to bypass referrer restrictions
+app.get('/api/img', async (req, res) => {
+    const url = req.query.url;
+    if (!url || typeof url !== 'string') {
+        return res.status(400).send('Missing url parameter');
+    }
+    // Only proxy known Google/YouTube image domains
+    const allowed = ['lh3.googleusercontent.com', 'yt3.googleusercontent.com', 'i.ytimg.com', 'music.youtube.com'];
+    try {
+        const parsed = new URL(url);
+        if (!allowed.some(d => parsed.hostname.endsWith(d))) {
+            return res.status(403).send('Domain not allowed');
+        }
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+        });
+        if (!response.ok) return res.status(response.status).send('Upstream error');
+        const contentType = response.headers.get('content-type') || 'image/jpeg';
+        res.set('Content-Type', contentType);
+        res.set('Cache-Control', 'public, max-age=86400'); // cache 24h
+        const buffer = Buffer.from(await response.arrayBuffer());
+        res.send(buffer);
+    } catch (err) {
+        res.status(500).send('Proxy error');
+    }
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Start server
+async function start() {
+    // Pre-initialize Innertube so first request isn't slow
+    console.log('[Server] Initializing Innertube...');
+    await getInnertube();
+
+    app.listen(PORT, () => {
+        console.log(`[Server] Dayax API running on http://localhost:${PORT}`);
+    });
+}
+
+start().catch((err) => {
+    console.error('[Server] Failed to start:', err);
+    process.exit(1);
+});
