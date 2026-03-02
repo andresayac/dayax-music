@@ -99,9 +99,9 @@
       <div class="results-grid" v-if="showTracks && searchStore.tracks.length">
         <section v-if="searchStore.artists.length && showArtists" class="top-result">
           <h3 class="section-title">Resultado principal</h3>
-          <div class="top-result-card" @click="$router.push(`/artist/${searchStore.artists[0].id}`)">
-            <img :src="searchStore.artists[0].picture_medium || searchStore.artists[0].picture" class="top-result-img" />
-            <h2 class="top-result-name">{{ searchStore.artists[0].name }}</h2>
+          <div class="top-result-card" @click="$router.push(`/artist/${searchStore.artists[0]!.id}`)">
+            <img :src="searchStore.artists[0]!.picture_medium || searchStore.artists[0]!.picture" class="top-result-img" />
+            <h2 class="top-result-name">{{ searchStore.artists[0]!.name }}</h2>
             <span class="top-result-type">Artista</span>
           </div>
         </section>

@@ -110,8 +110,8 @@ const repeatLabel = computed(() => {
 watch(() => player.progress, (val) => { progressValue.value = Math.round(val) }, { immediate: true })
 watch(() => player.volume, (val) => { volumeValue.value = val })
 
-function onSeek(val: number) { player.seekTo(val) }
-function onVolumeChange(val: number) { player.setVolume(val) }
+function onSeek(val: number | number[]) { player.seekTo(Array.isArray(val) ? val[0]! : val) }
+function onVolumeChange(val: number | number[]) { player.setVolume(Array.isArray(val) ? val[0]! : val) }
 
 function toggleMute() {
   if (player.volume > 0) { prevVolume = player.volume; player.setVolume(0); volumeValue.value = 0 }

@@ -286,7 +286,7 @@ function getRandomColor(text: string): string {
   ]
   let hash = 0
   for (let i = 0; i < text.length; i++) hash = text.charCodeAt(i) + ((hash << 5) - hash)
-  return colors[Math.abs(hash) % colors.length]
+  return colors[Math.abs(hash) % colors.length] ?? '#673ab7'
 }
 
 onMounted(() => loadExplore())

@@ -45,7 +45,7 @@ const player = usePlayerStore()
 
 function playAll() {
   if (favorites.tracks.length) {
-    player.playTrack(favorites.tracks[0], favorites.tracks)
+    player.playTrack(favorites.tracks[0]!, favorites.tracks)
   }
 }
 </script>
