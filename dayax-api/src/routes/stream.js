@@ -85,12 +85,43 @@ async function getAudioUrl(videoId) {
     if (cached && cached.expires > Date.now()) return cached;
 
     const yt = await getInnertube();
-    const info = await yt.getBasicInfo(videoId, 'IOS');
 
-    const allFormats = [
-        ...(info.streaming_data?.adaptive_formats || []),
-        ...(info.streaming_data?.formats || []),
-    ].filter(f => (f.url || f.signature_cipher) && f.has_audio);
+    // Try IOS first, fall back to ANDROID if no formats
+    const clients = ['IOS', 'ANDROID', 'WEB'];
+    let info, allFormats = [];
+
+    for (const client of clients) {
+        console.log(`[stream] Trying client "${client}" for ${videoId}`);
+        try {
+            info = await yt.getBasicInfo(videoId, client);
+        } catch (err) {
+            console.error(`[stream] Client "${client}" failed:`, err.message);
+            continue;
+        }
+
+        const sd = info.streaming_data;
+        console.log(`[stream] streaming_data: ${sd ? 'present' : 'null/undefined'}`);
+
+        if (!sd) continue;
+
+        const rawAdaptive = sd.adaptive_formats || [];
+        const rawFormats = sd.formats || [];
+        console.log(`[stream] Raw formats: adaptive=${rawAdaptive.length}, combined=${rawFormats.length}`);
+
+        // Log first few formats for debugging
+        [...rawAdaptive, ...rawFormats].slice(0, 3).forEach((f, i) => {
+            console.log(`[stream]   format[${i}]: mime=${f.mime_type}, has_audio=${f.has_audio}, has_video=${f.has_video}, url=${f.url ? 'yes' : 'no'}, cipher=${f.signature_cipher ? 'yes' : 'no'}`);
+        });
+
+        allFormats = [
+            ...rawAdaptive,
+            ...rawFormats,
+        ].filter(f => (f.url || f.signature_cipher) && f.has_audio);
+
+        console.log(`[stream] Formats after filter (has_audio + url/cipher): ${allFormats.length}`);
+
+        if (allFormats.length > 0) break;
+    }
 
     // Prefer audio-only, sorted by bitrate (highest first)
     const audioOnly = allFormats
@@ -102,6 +133,8 @@ async function getAudioUrl(videoId) {
         : allFormats.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
 
     if (!best) throw new Error('No audio formats found');
+
+    console.log(`[stream] Selected: mime=${best.mime_type}, bitrate=${best.bitrate}, audio_only=${!best.has_video}`);
 
     const url = await best.decipher(yt.session.player);
 
