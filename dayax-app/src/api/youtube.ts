@@ -270,7 +270,7 @@ export const youtubeApi = {
     },
 
     getArtistTopTracks(id: string, limit = 10) {
-        return api.get<DayaxResponse<DayaxTrack>>(`/artist/${id}/top`, {
+        return api.get<DayaxResponse<DayaxTrack> & { playlistId?: string }>(`/artist/${id}/top`, {
             params: { limit },
         })
     },

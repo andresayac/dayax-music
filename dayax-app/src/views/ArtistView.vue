@@ -11,14 +11,16 @@
     <div class="artist-actions">
       <Button icon="pi pi-play" rounded class="hero-play-btn" @click="playTopTracks" />
       <Button icon="pi pi-shuffle" severity="secondary" text rounded size="small" v-tooltip.top="'Aleatorio'" />
-      <Button label="Seguir" severity="secondary" outlined rounded size="small" class="follow-btn" />
     </div>
 
     <section class="section" v-if="topTracks.length">
       <h2 class="section-title">Popular</h2>
       <div class="tracks-list stagger">
-        <TrackItem v-for="(track, i) in topTracks" :key="track.id" :track="track" :track-list="topTracks" :index="i + 1" />
+        <TrackItem v-for="(track, i) in visibleTracks" :key="track.id" :track="track" :track-list="topTracks" :index="i + 1" />
       </div>
+      <router-link v-if="songsPlaylistId && totalSongs > 5" :to="`/playlist/${songsPlaylistId}`" class="show-all-btn">
+        Mostrar todo
+      </router-link>
     </section>
 
     <section class="section" v-if="albums.length">
@@ -57,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { youtubeApi, type DayaxArtist, type DayaxTrack, type DayaxAlbum } from '@/api/youtube'
 import { usePlayerStore } from '@/stores/player'
@@ -73,6 +75,10 @@ const topTracks = ref<DayaxTrack[]>([])
 const albums = ref<DayaxAlbum[]>([])
 const isLoading = ref(true)
 const hasError = ref(false)
+const songsPlaylistId = ref('')
+const totalSongs = ref(0)
+
+const visibleTracks = computed(() => topTracks.value.slice(0, 5))
 
 async function loadArtist(id: string) {
   isLoading.value = true
@@ -87,6 +93,8 @@ async function loadArtist(id: string) {
     artist.value = artistRes.data
     document.title = `${artistRes.data.name} — Dayax`
     topTracks.value = tracksRes.data.data
+    songsPlaylistId.value = tracksRes.data.playlistId || ''
+    totalSongs.value = tracksRes.data.total || tracksRes.data.data.length
     albums.value = albumsRes.data.data.map((a) => ({
       ...a,
       artist: { id: artistRes.data.id, name: artistRes.data.name, picture: artistRes.data.picture },
@@ -164,6 +172,23 @@ watch(() => route.params.id, (id) => { if (id) loadArtist(String(id)) })
 
 .section { margin-bottom: 28px; }
 .tracks-list { display: flex; flex-direction: column; }
+
+.show-all-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 24px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 100px;
+  text-decoration: none;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.show-all-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.4);
+}
 .mb-3 { margin-bottom: 12px; }
 
 /* Skeleton */

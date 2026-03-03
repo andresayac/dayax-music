@@ -2,7 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import { getInnertube } from './innertube.js';
 import searchRoutes from './routes/search.js';
-import browseRoutes from './routes/browse.js';
+import homeRoutes from './routes/home.js';
+import exploreRoutes from './routes/explore.js';
+import artistRoutes from './routes/artist.js';
+import albumRoutes from './routes/album.js';
+import playlistRoutes from './routes/playlist.js';
+import playbackRoutes from './routes/playback.js';
+import miscRoutes from './routes/misc.js';
 import streamRoutes from './routes/stream.js';
 
 const app = express();
@@ -21,7 +27,13 @@ app.use(express.json());
 
 // Routes
 app.use('/api/search', searchRoutes);
-app.use('/api', browseRoutes);
+app.use('/api', homeRoutes);         // /api/chart, /api/home
+app.use('/api', exploreRoutes);      // /api/explore, /api/moods, /api/genre/:params, /api/charts-browse, /api/new-releases
+app.use('/api/artist', artistRoutes); // /api/artist/:id, /api/artist/:id/top, /api/artist/:id/albums
+app.use('/api/album', albumRoutes);   // /api/album/:id
+app.use('/api/playlist', playlistRoutes); // /api/playlist/:id
+app.use('/api', playbackRoutes);     // /api/lyrics/:videoId, /api/up-next/:videoId, /api/related/:videoId, /api/track/:videoId
+app.use('/api', miscRoutes);         // /api/recap, /api/suggestions, /api/queue
 app.use('/api/stream', streamRoutes);
 
 // Image proxy — fetches YouTube/Google CDN images server-side to bypass referrer restrictions
