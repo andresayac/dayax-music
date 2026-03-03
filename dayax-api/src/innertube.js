@@ -17,7 +17,7 @@ export async function getInnertube() {
         const start = performance.now();
 
         const config = {
-            lang: 'es-419',
+            lang: 'es-US',
             location: 'CO',
             cache: new UniversalCache(false),
             generate_session_locally: true,
