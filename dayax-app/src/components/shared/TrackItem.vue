@@ -153,6 +153,8 @@ function formatDuration(secs: number): string {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--transition-fast);
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .track-row:hover {
@@ -233,12 +235,16 @@ function formatDuration(secs: number): string {
   flex-direction: column;
   min-width: 0;
   gap: 2px;
+  overflow: hidden;
 }
 
 .track-title {
   font-size: 0.88rem;
   font-weight: 500;
   color: var(--p-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .accent-text { color: var(--p-primary-color) !important; }
@@ -246,6 +252,9 @@ function formatDuration(secs: number): string {
 .track-artist {
   font-size: 0.72rem;
   color: var(--p-text-muted-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .track-artist a { transition: color var(--transition-fast); text-decoration: none; }
 .track-artist a:hover { color: var(--p-text-color); text-decoration: underline; }

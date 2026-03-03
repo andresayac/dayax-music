@@ -431,7 +431,7 @@ onMounted(() => loadAll())
 </script>
 
 <style scoped>
-.discover-page { width: 100%; }
+.discover-page { width: 100%; overflow-x: hidden; }
 
 .page-header { margin-bottom: 8px; }
 .page-title {
@@ -533,7 +533,7 @@ onMounted(() => loadAll())
   margin-bottom: 10px;
 }
 
-.tracks-list { display: flex; flex-direction: column; }
+.tracks-list { display: flex; flex-direction: column; overflow: hidden; }
 
 /* ─── Carousel ─── */
 .carousel-wrap { position: relative; }
