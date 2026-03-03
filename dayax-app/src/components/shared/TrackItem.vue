@@ -31,7 +31,7 @@
       <Button icon="pi pi-ellipsis-v" severity="secondary" text rounded size="small" @click.stop="onContextMenu($event)" v-tooltip.top="'Más opciones'" />
     </div>
 
-    <span class="track-duration">{{ formatDuration(track.duration) }}</span>
+    <span class="track-duration" v-if="track.duration">{{ formatDuration(track.duration) }}</span>
 
     <ContextMenu ref="ctxMenu" :model="menuItems" />
   </div>
